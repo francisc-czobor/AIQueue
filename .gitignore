@@ -1,2 +1,6 @@
 
 \.DS_Store
+\Java 8\*.class
+\C++ 11\*.o
+\*\*.hlt
+\*\*.log
