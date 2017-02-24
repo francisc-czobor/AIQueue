@@ -2,6 +2,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MyBot {
+	
+	private static Move assignMove (Location location) {
+		if (location.getSite().strength == 0) {
+			return new Move(location, Direction.STILL);
+		} else {
+			return new Move(location, Direction.randomDirection());
+		}
+	}
+	
     public static void main(String[] args) throws java.io.IOException {
 
         final InitPackage iPackage = Networking.getInit();
@@ -20,7 +29,7 @@ public class MyBot {
                     final Location location = gameMap.getLocation(x, y);
                     final Site site = location.getSite();
                     if(site.owner == myID) {
-                        moves.add(new Move(location, Direction.randomDirection()));
+                        moves.add(assignMove(location));
                     }
                 }
             }
