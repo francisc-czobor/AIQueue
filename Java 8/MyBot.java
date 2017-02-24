@@ -35,7 +35,7 @@ public class MyBot {
 	}
 	
     public static void main(String[] args) throws java.io.IOException {
-        Networking.sendInit("MyJavaBot");
+        Networking.sendInit("AIQueue_francisc");
 
         while(true) {
             List<Move> moves = new ArrayList<Move>();
