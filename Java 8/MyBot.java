@@ -3,14 +3,19 @@ import java.util.List;
 
 public class MyBot {
 	
-	private static List<Location> neighbors(Location location) {
-		List<Location> neighbors = new ArrayList<Location>(4);
+    private final static InitPackage iPackage = Networking.getInit();
+    private final static int myID = iPackage.myID;
+    private final static GameMap gameMap = iPackage.map;
+	
+	private static ArrayList<Location> neighbors(Location location) {
+		ArrayList<Location> neighbors = new ArrayList<Location>(4);
+		int x = location.getX();
+		int y = location.getY();
 
-		neighbors.add(new Location(location.x, location.y + 1, location.getSite()));
-		neighbors.add(new Location(location.x + 1, location.y, location.getSite()));
-		neighbors.add(new Location(location.x, location.y - 1, location.getSite()));
-		neighbors.add(new Location(location.x - 1, location.y, location.getSite()));
-
+		neighbors.add(gameMap.getLocation(x, y + 1));
+		neighbors.add(gameMap.getLocation(x + 1, y));
+		neighbors.add(gameMap.getLocation(x, y - 1));
+		neighbors.add(gameMap.getLocation(x - 1, y));
 		return neighbors;
 	}
 		if (location.getSite().strength < 10 * location.getSite().production) {
@@ -21,11 +26,6 @@ public class MyBot {
 	}
 	
     public static void main(String[] args) throws java.io.IOException {
-
-        final InitPackage iPackage = Networking.getInit();
-        final int myID = iPackage.myID;
-        final GameMap gameMap = iPackage.map;
-
         Networking.sendInit("MyJavaBot");
 
         while(true) {
