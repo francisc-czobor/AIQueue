@@ -3,7 +3,16 @@ import java.util.List;
 
 public class MyBot {
 	
-	private static Move assignMove (Location location) {
+	private static List<Location> neighbors(Location location) {
+		List<Location> neighbors = new ArrayList<Location>(4);
+
+		neighbors.add(new Location(location.x, location.y + 1, location.getSite()));
+		neighbors.add(new Location(location.x + 1, location.y, location.getSite()));
+		neighbors.add(new Location(location.x, location.y - 1, location.getSite()));
+		neighbors.add(new Location(location.x - 1, location.y, location.getSite()));
+
+		return neighbors;
+	}
 		if (location.getSite().strength < 10 * location.getSite().production) {
 			return new Move(location, Direction.STILL);
 		} else {
