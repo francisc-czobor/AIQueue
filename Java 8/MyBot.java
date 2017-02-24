@@ -18,6 +18,19 @@ public class MyBot {
 		neighbors.add(gameMap.getLocation(x - 1, y));
 		return neighbors;
 	}
+
+	private static Move assignMove(Location location) {
+		ArrayList<Location> neighbors = neighbors(location);
+
+		for (int i = 0; i < 4; i++) {
+			if (neighbors.get(i).getSite().owner != myID
+					&& neighbors.get(i).getSite().strength < location.getSite().strength) {
+				return new Move(location, Direction.CARDINALS[i]);
+			} else {
+				return new Move(location, Direction.STILL);
+			}
+		}
+		
 		if (location.getSite().strength < 10 * location.getSite().production) {
 			return new Move(location, Direction.STILL);
 		} else {
