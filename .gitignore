@@ -6,3 +6,12 @@
 \*\*.log
 \Java 8\RandomBot.java
 \C++ 11\RandomBot.cpp
+*.class
+
+*.hlt
+
+*.log
+
+Java 8/\.project
+
+Java 8/\.classpath
