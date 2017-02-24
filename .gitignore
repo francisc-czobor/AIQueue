@@ -11,3 +11,5 @@
 Java 8/\.classpath
 
 Java 8/\.project
+
+*.hlt

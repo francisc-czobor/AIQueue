@@ -4,7 +4,7 @@ import java.util.List;
 public class MyBot {
 	
 	private static Move assignMove (Location location) {
-		if (location.getSite().strength == 0) {
+		if (location.getSite().strength < 10 * location.getSite().production) {
 			return new Move(location, Direction.STILL);
 		} else {
 			return new Move(location, Direction.randomDirection());
