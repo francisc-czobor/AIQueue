@@ -2,12 +2,14 @@
 \.DS_Store
 \Java 8\*.class
 \C++ 11\*.o
-\*\*.hlt
-\*\*.log
+\Java 8\*.hlt
+\Java 8\*.log
+\C++ 11\*.hlt
+\C++ 11\*.log
+\Java 8\RandomBot.java
+\C++ 11\RandomBot.cpp
+*.class
 
 *.hlt
-
-*.o
-
 
 *.log
