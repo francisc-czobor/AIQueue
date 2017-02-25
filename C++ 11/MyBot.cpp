@@ -16,7 +16,6 @@
 #define EAST 2
 #define SOUTH 3
 #define WEST 4
-#define IDK 65
 
 
 class Urs {
@@ -26,8 +25,9 @@ class Urs {
         unsigned char myID;
         std::vector<hlt::Location> alarms, orders;
         std::queue<hlt::Location> to_move;
+        std::set<hlt::Move> moves;
         bool war = false;
-        int ray, size;
+        float ray, size;
 
     void clear_alarms() {
         alarms.clear();
@@ -50,17 +50,72 @@ class Urs {
     }
 
     unsigned char find_inner_path(hlt::Location a, hlt::Location b) {
+
+        unsigned char IDK = 5;
+
+        hlt::Location l = map.getLocation(a, NORTH);
+        float d = map.width, aux;
+
+        if(map.getSite(l).owner == myID) {
+            d = map.getDistance(l, b);
+            IDK = NORTH;
+        }
+
+        l = map.getLocation(a, EAST);
+        if(map.getSite(l).owner == myID && d > (aux = map.getDistance(l, b))) {
+            d = aux;
+            IDK = EAST;
+        }
+
+        l = map.getLocation(a, SOUTH);
+        if(map.getSite(l).owner == myID && d > (aux = map.getDistance(l, b))) {
+            d = aux;
+            IDK = SOUTH;
+        }
+
+        l = map.getLocation(a, WEST);
+        if(map.getSite(l).owner == myID && d > (aux = map.getDistance(l, b))) {
+            d = aux;
+            IDK = WEST;
+        }
+
         return IDK;
     }
 
     unsigned char find_short_path(hlt::Location a, hlt::Location b) {
+
+        unsigned char IDK = 0;
+
         return IDK;
     }
 
-    void assign(std::set<hlt::Move> moves) {
-        if(to_move.empty())
-            return;
+    void assign() {
 
+        hlt::Location l, alarm;
+        unsigned char c;
+        int k;
+        
+        while(!(to_move.empty())) {
+
+            l = to_move.front();
+            k = 1;
+
+            for(int i = 0; i < alarms.size(); i++) {
+
+                alarm = alarms[i];
+                if((c = find_inner_path(l, alarm)) <= 4) {
+
+                    moves.insert({ l, c });
+                    k = 0;
+                    break;
+                }
+            }
+
+            if(k)
+                moves.insert({ l, STILL });
+
+            to_move.pop();
+        }
     }
 
     unsigned char out_direction(unsigned short b, unsigned short a) {
@@ -117,7 +172,7 @@ class Urs {
         return i;
     }
 
-    unsigned char get_direction(unsigned short b, unsigned short a) {
+    void do_move(unsigned short b, unsigned short a) {
 
         int i = 0, v[] = {0, 0, 0, 0};
         double val[] = {0, 0, 0, 0};
@@ -190,14 +245,15 @@ class Urs {
         }
 
         if(i == 4) {
-            if(strength <= prod * prod)
-                return 0;
+            if(strength <= 2 * prod) {
+                moves.insert({ { b, a }, 0 });
+                return;
+            }
 
-            return out_direction(b, a);
+            to_move.push({ b, a });
+            
+            return;
         }
-
-        if(strength <= prod * prod)
-            return 0;
 
         int ind = 0, nr = 0;
 
@@ -209,7 +265,9 @@ class Urs {
         }
 
         if(nr) {
-            return ind+1;
+            moves.insert({ { b, a }, (unsigned char)(ind + 1) });
+            call_to_arms(b, a);
+            return;
         }
 
         double nr2 = 0;
@@ -220,11 +278,13 @@ class Urs {
                 ind = i;
             }   
         }
-        if(nr2 != 0) {
-            return ind + 1;
+        if(nr2) {
+            moves.insert({ { b, a }, (unsigned char)(ind + 1) });
+            shout(b, a);
+            return;
         }
         
-        return 0;
+        to_move.push({ b, a });
     }
 
 };
@@ -242,11 +302,10 @@ int main(void) {
     sendInit("Mda");
 
     //std::cout << "pl";
+    
+    while(true) {
 
-    std::set<hlt::Move> moves;
-
-    while(1) {
-        moves.clear();
+        urs.moves.clear();
         getFrame(urs.map);
 
         for(unsigned short a = 0; a < (urs.map).height; a++) {
@@ -255,20 +314,20 @@ int main(void) {
                 if((s = (urs.map).getSite({ b, a })).owner == urs.myID) {
                     
                     if(s.strength == 0) {
-                        moves.insert({ { b, a }, STILL });
+                        urs.moves.insert({ { b, a }, STILL });
 
                     } else {
 
-                        moves.insert({ { b, a }, urs.get_direction(b, a) });
+                        urs.do_move(b, a);
                     }
                 }
             }
         }
 
-        urs.assign(moves);
+        urs.assign();
         urs.clear_alarms();
 
-        sendFrame(moves);
+        sendFrame(urs.moves);
     }
 
     return 0;
