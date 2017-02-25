@@ -7,6 +7,7 @@
 #include <fstream>
 #include <queue>
 #include <vector>
+#include <cmath>
 
 #include "hlt.hpp"
 #include "networking.hpp"
@@ -27,7 +28,7 @@ class Urs {
         std::queue<hlt::Location> to_move;
         std::set<hlt::Move> moves;
         bool war = false;
-        int ray, i = 0;
+        int ray, empire_size = 1, i = 0;
 
     void clear_alarms() {
         i++;
@@ -96,7 +97,7 @@ class Urs {
                 }
             }
 
-            if(bun)
+            if(bun && !is_solved(alarms[i].x, alarms[i].y))
                 new_alarms.push_back(alarms[i]);
         }
 
@@ -162,7 +163,7 @@ class Urs {
             for(int i = 0; i < alarms.size(); i++) {
 
                 alarm = alarms[i];
-                if(map.getDistance(l, alarm) < d && map.getDistance(l, alarm) < 6) {
+                if(map.getDistance(l, alarm) < d && map.getDistance(l, alarm) < ray) {
                     d = map.getDistance(l, alarm);
                     k = 0;
                     ind = i;
@@ -182,6 +183,15 @@ class Urs {
             to_move.pop();
         }
     }
+
+    float update_ray() {
+
+    	ray = ceil(sqrt(empire_size) / 2);
+
+    	if(ray < 3)
+    		ray = 3;
+    }
+
 
     unsigned char out_direction(unsigned short b, unsigned short a) {
 
@@ -254,7 +264,7 @@ class Urs {
         return true;
     }
 
-    bool solved(unsigned char b, unsigned char a) {
+    bool is_solved(unsigned char b, unsigned char a) {
 
         if(((map).getSite({ b, a }, SOUTH)).owner != (myID))
             return false;
@@ -417,6 +427,8 @@ int main(void) {
         urs.moves.clear();
         getFrame(urs.map);
 
+        urs.empire_size = 1;
+
         for(unsigned short a = 0; a < (urs.map).height; a++) {
             for(unsigned short b = 0; b < (urs.map).width; b++) {
 
@@ -429,10 +441,13 @@ int main(void) {
 
                         urs.do_move(b, a);
                     }
+
+                    urs.empire_size++;
                 }
             }
         }
 
+        urs.update_ray();
         urs.assign();
         urs.alarm_normalize();
         sendFrame(urs.moves);
