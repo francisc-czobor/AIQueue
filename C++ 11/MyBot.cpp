@@ -16,7 +16,6 @@
 #define EAST 2
 #define SOUTH 3
 #define WEST 4
-#define IDK 65
 
 
 class Urs {
@@ -26,41 +25,162 @@ class Urs {
         unsigned char myID;
         std::vector<hlt::Location> alarms, orders;
         std::queue<hlt::Location> to_move;
+        std::set<hlt::Move> moves;
         bool war = false;
-        int ray, size;
+        int ray, i = 0;
 
     void clear_alarms() {
-        alarms.clear();
+        i++;
+        if(i == 5) {
+            alarms.clear();
+            i = 0;
+        }
     }
 
-    void shout(unsigned short b, unsigned short a) {
+    void shout(hlt::Location l) {
 
-        if(!war)
-            alarms.push_back({ b, a });
+        if(!war) {
+
+            int k = 1;
+
+            for(int i = 0; i < alarms.size(); i++) {
+
+                if(map.getDistance(l, alarms[i]) < 5) {
+
+                    k = 0;
+                    alarms[i] = l;
+                    break;
+                }
+            }
+            if(k && alarms.size() < 2)
+                alarms.push_back(l);
+        }
     }
 
-    void call_to_arms(unsigned short b, unsigned short a) {
+    void call_to_arms(hlt::Location l) {
 
         if(!war){
-            clear_alarms();
+            alarms.clear();
             war = true;
         }
-        
-        alarms.push_back({ b, a });
+
+        int k = 1;
+
+        for(int i = 0; i < alarms.size(); i++) {
+
+            if(map.getDistance(l, alarms[i]) < 3) {
+
+                k = 0;
+                alarms[i] = l;
+                break;
+            }
+        }
+
+        if(k && alarms.size() < 3)
+            alarms.push_back(l);
+
+    }
+
+    void alarm_normalize() {
+
+        std::vector<hlt::Location> new_alarms;
+        bool bun;
+
+        for(int  i = 0; i < alarms.size(); i++) {
+
+            bun = true;
+            for(int j = 0; new_alarms.size(); j++) {
+                if(map.getDistance(alarms[i], new_alarms[j]) < 2) {
+                    bun = false;
+                    break;
+                }
+            }
+
+            if(bun)
+                new_alarms.push_back(alarms[i]);
+        }
+
+        alarms = new_alarms;
     }
 
     unsigned char find_inner_path(hlt::Location a, hlt::Location b) {
+
+        unsigned char IDK = 5;
+
+        if(map.getDistance(a, b) == 0)
+            return 0;
+
+        hlt::Location l = map.getLocation(a, NORTH);
+        float d = map.width, aux;
+
+        if(map.getSite(l).owner == myID) {
+            d = map.getDistance(l, b);
+            IDK = NORTH;
+        }
+
+        l = map.getLocation(a, EAST);
+        if(map.getSite(l).owner == myID && d > (aux = map.getDistance(l, b))) {
+            d = aux;
+            IDK = EAST;
+        }
+
+        l = map.getLocation(a, SOUTH);
+        if(map.getSite(l).owner == myID && d > (aux = map.getDistance(l, b))) {
+            d = aux;
+            IDK = SOUTH;
+        }
+
+        l = map.getLocation(a, WEST);
+        if(map.getSite(l).owner == myID && d > (aux = map.getDistance(l, b))) {
+            d = aux;
+            IDK = WEST;
+        }
+
         return IDK;
     }
 
     unsigned char find_short_path(hlt::Location a, hlt::Location b) {
+
+        unsigned char IDK = 0;
+
         return IDK;
     }
 
-    void assign(std::set<hlt::Move> moves) {
-        if(to_move.empty())
-            return;
+    void assign() {
 
+        hlt::Location l, alarm;
+        unsigned char c;
+        int k, d, ind;
+        
+        while(!(to_move.empty())) {
+
+            l = to_move.front();
+            k = 1;
+            d = map.width + map.height;
+            ind;
+
+            for(int i = 0; i < alarms.size(); i++) {
+
+                alarm = alarms[i];
+                if(map.getDistance(l, alarm) < d && map.getDistance(l, alarm) < 6) {
+                    d = map.getDistance(l, alarm);
+                    k = 0;
+                    ind = i;
+                }
+            }
+
+            if(k) {
+                if(inner_tile(l.x, l.y)) {
+                    moves.insert({ l, out_direction(l.x, l.y) });
+                } else {
+                    moves.insert({ l, STILL });
+                }
+            } else {
+                moves.insert({ l, find_inner_path(l, alarms[ind]) });
+            }
+
+            to_move.pop();
+        }
     }
 
     unsigned char out_direction(unsigned short b, unsigned short a) {
@@ -117,7 +237,45 @@ class Urs {
         return i;
     }
 
-    unsigned char get_direction(unsigned short b, unsigned short a) {
+    bool inner_tile(unsigned char b, unsigned char a) {
+
+        if(((map).getSite({ b, a }, SOUTH)).owner != (myID))
+            return false;
+
+        if(((map).getSite({ b, a }, NORTH)).owner != (myID))
+            return false;
+
+        if(((map).getSite({ b, a }, EAST)).owner != (myID))
+            return false;
+
+        if(((map).getSite({ b, a }, WEST)).owner != (myID))
+            return false;
+
+        return true;
+    }
+
+    bool solved(unsigned char b, unsigned char a) {
+
+        if(((map).getSite({ b, a }, SOUTH)).owner != (myID))
+            return false;
+
+        if(((map).getSite({ b, a }, NORTH)).owner != (myID))
+            return false;
+
+        if(((map).getSite({ b, a }, EAST)).owner != (myID))
+            return false;
+
+        if(((map).getSite({ b, a }, WEST)).owner != (myID))
+            return false;
+
+        return true;
+    }
+
+    bool alarmable(unsigned short b, unsigned short a) {
+
+    }
+
+    void do_move(unsigned short b, unsigned short a) {
 
         int i = 0, v[] = {0, 0, 0, 0};
         double val[] = {0, 0, 0, 0};
@@ -189,15 +347,21 @@ class Urs {
                 val[3] = 10;
         }
 
-        if(i == 4) {
-            if(strength <= prod * prod)
-                return 0;
-
-            return out_direction(b, a);
+        if(strength <= 3 * prod) {
+            moves.insert({ { b, a }, 0 });
+            return;
         }
 
-        if(strength <= prod * prod)
-            return 0;
+        if(i == 4) {
+            if(strength <= 5 * prod) {
+                moves.insert({ { b, a }, 0 });
+                return;
+            }
+
+            to_move.push({ b, a });
+            
+            return;
+        }
 
         int ind = 0, nr = 0;
 
@@ -209,7 +373,9 @@ class Urs {
         }
 
         if(nr) {
-            return ind+1;
+            moves.insert({ { b, a }, (unsigned char)(ind + 1) });
+            call_to_arms(map.getLocation({ b, a }, (unsigned char)(ind + 1)));
+            return;
         }
 
         double nr2 = 0;
@@ -220,11 +386,14 @@ class Urs {
                 ind = i;
             }   
         }
-        if(nr2 != 0) {
-            return ind + 1;
+        if(nr2) {
+            moves.insert({ { b, a }, (unsigned char)(ind + 1) });
+            if(!(inner_tile(b, a)))
+                shout(map.getLocation({ b, a }, (unsigned char)(ind + 1)));
+            return;
         }
         
-        return 0;
+        to_move.push({ b, a });
     }
 
 };
@@ -242,11 +411,10 @@ int main(void) {
     sendInit("Mda");
 
     //std::cout << "pl";
+    
+    while(true) {
 
-    std::set<hlt::Move> moves;
-
-    while(1) {
-        moves.clear();
+        urs.moves.clear();
         getFrame(urs.map);
 
         for(unsigned short a = 0; a < (urs.map).height; a++) {
@@ -255,20 +423,19 @@ int main(void) {
                 if((s = (urs.map).getSite({ b, a })).owner == urs.myID) {
                     
                     if(s.strength == 0) {
-                        moves.insert({ { b, a }, STILL });
+                        urs.moves.insert({ { b, a }, STILL });
 
                     } else {
 
-                        moves.insert({ { b, a }, urs.get_direction(b, a) });
+                        urs.do_move(b, a);
                     }
                 }
             }
         }
 
-        urs.assign(moves);
-        urs.clear_alarms();
-
-        sendFrame(moves);
+        urs.assign();
+        urs.alarm_normalize();
+        sendFrame(urs.moves);
     }
 
     return 0;
