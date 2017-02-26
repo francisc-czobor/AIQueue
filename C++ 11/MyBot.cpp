@@ -448,8 +448,8 @@ int main(void) {
         }
 
         urs.update_ray();
-        urs.assign();
         urs.alarm_normalize();
+        urs.assign();
         sendFrame(urs.moves);
     }
 
