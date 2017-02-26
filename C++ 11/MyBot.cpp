@@ -38,6 +38,11 @@ class Urs {
         }
     }
 
+    void update_ray() {
+
+        ray = empire_size / 5 + 6;
+    }
+
     void shout(hlt::Location l) {
 
         if(!war) {
@@ -46,10 +51,16 @@ class Urs {
 
             for(int i = 0; i < alarms.size(); i++) {
 
-                if(map.getDistance(l, alarms[i]) < 5) {
+                if(map.getDistance(l, alarms[i]) < 2) {
 
                     k = 0;
                     alarms[i] = l;
+                    break;
+                }
+
+                if(map.getDistance(l, alarms[i]) < 4) {
+
+                    k = 0;
                     break;
                 }
             }
@@ -72,7 +83,6 @@ class Urs {
             if(map.getDistance(l, alarms[i]) < 3) {
 
                 k = 0;
-                alarms[i] = l;
                 break;
             }
         }
@@ -91,13 +101,14 @@ class Urs {
 
             bun = true;
             for(int j = 0; new_alarms.size(); j++) {
-                if(map.getDistance(alarms[i], new_alarms[j]) < 2) {
+                if(map.getDistance(alarms[i], new_alarms[j]) < 4) {
                     bun = false;
                     break;
                 }
             }
 
-            if(bun && !is_solved(alarms[i].x, alarms[i].y))
+            if(bun && !(inner_tile(alarms[i].x, alarms[i].y)))
+
                 new_alarms.push_back(alarms[i]);
         }
 
@@ -111,8 +122,13 @@ class Urs {
         if(map.getDistance(a, b) == 0)
             return 0;
 
+        if(war && (IDK = enemy_direction(a.x, a.y))) {
+            return IDK;
+        }
+        IDK = 5;
+
         hlt::Location l = map.getLocation(a, NORTH);
-        float d = map.width, aux;
+        float d = map.width + map.height, aux;
 
         if(map.getSite(l).owner == myID) {
             d = map.getDistance(l, b);
@@ -136,6 +152,9 @@ class Urs {
             d = aux;
             IDK = WEST;
         }
+
+        if(map.getDistance(a, b) < d)
+            return 5;
 
         return IDK;
     }
@@ -163,7 +182,9 @@ class Urs {
             for(int i = 0; i < alarms.size(); i++) {
 
                 alarm = alarms[i];
-                if(map.getDistance(l, alarm) < d && map.getDistance(l, alarm) < ray) {
+
+                if(map.getDistance(l, alarm) < d) {
+
                     d = map.getDistance(l, alarm);
                     k = 0;
                     ind = i;
@@ -177,7 +198,11 @@ class Urs {
                     moves.insert({ l, STILL });
                 }
             } else {
-                moves.insert({ l, find_inner_path(l, alarms[ind]) });
+                unsigned char rez = find_inner_path(l, alarms[ind]);
+                if(rez <= 4)
+                    moves.insert({ l, rez });
+                    else
+                        moves.insert({ l, STILL });
             }
 
             to_move.pop();
@@ -195,7 +220,7 @@ class Urs {
 
     unsigned char out_direction(unsigned short b, unsigned short a) {
 
-        unsigned char owner = (map.getSite({ b, a })).owner, d = 3;
+        unsigned char d = 3;
         short r;
         
         for(unsigned short i = 0; i < (map).width || i < (map).height; i++) {
@@ -219,6 +244,76 @@ class Urs {
 
             if(((map).getSite({ (unsigned short)r, a })).owner != myID)
                 return 4;
+        }
+
+        return 0;
+    }
+
+    unsigned char enemy_direction(unsigned short b, unsigned short a) {
+
+        bool v[] = { true, true, true, true };
+        hlt::Location l = { b, a };
+        hlt::Site s;
+        short r;
+        
+        for(unsigned short i = 0; i < (map).width || i < (map).height; i++) {
+
+            if(v[2]) {
+
+                s = map.getSite({ b, (unsigned short)((a + i) % map.height) });
+
+                if(s.owner != myID && s.owner)
+                    return SOUTH;
+
+                if(!s.owner && s.strength) {
+                    v[2] = false;
+                }
+            }
+           
+            if(v[0]) {
+
+                r = a - i;
+                if(r < 0)
+                    r += map.height;
+
+                s = map.getSite({ b, (unsigned short)r });
+
+                if(s.owner != myID && s.owner)
+                    return NORTH;
+
+                if(!s.owner && s.strength) {
+                    v[0] = false;
+                }
+
+            }
+            
+            if(v[1]) {
+
+                s = map.getSite({ (unsigned short)((b + i) % map.width), a });
+
+                if(s.owner != myID && s.owner)
+                    return EAST;
+
+                if(!s.owner && s.strength) {
+                    v[1] = false;
+                }
+            }
+
+            if(v[3]) {
+
+                r = b - i;
+                if(r < 0)
+                    r += map.width;
+
+                s = map.getSite({ (unsigned short)r, a });
+
+                if(s.owner != myID && s.owner)
+                    return WEST;
+
+                if(!s.owner && s.strength) {
+                    v[3] = false;
+                }
+            }
         }
 
         return 0;
@@ -264,23 +359,6 @@ class Urs {
         return true;
     }
 
-    bool is_solved(unsigned char b, unsigned char a) {
-
-        if(((map).getSite({ b, a }, SOUTH)).owner != (myID))
-            return false;
-
-        if(((map).getSite({ b, a }, NORTH)).owner != (myID))
-            return false;
-
-        if(((map).getSite({ b, a }, EAST)).owner != (myID))
-            return false;
-
-        if(((map).getSite({ b, a }, WEST)).owner != (myID))
-            return false;
-
-        return true;
-    }
-
     bool alarmable(unsigned short b, unsigned short a) {
 
     }
@@ -302,7 +380,7 @@ class Urs {
             v[2] = enemy_neighbor( b, (unsigned short)((a + 1) % (map).height));
 
             if(s.strength)
-                val[2] = (double)s.production / (double)s.strength + 1;
+                val[2] = (double)s.production / (double)s.strength;
             else
                 val[2] = 10;
         }
@@ -320,7 +398,7 @@ class Urs {
             v[0] = enemy_neighbor( b, r);
 
             if(s.strength)
-                val[0] = (double)s.production / (double)s.strength + 1;
+                val[0] = (double)s.production / (double)s.strength;
             else
                 val[0] = 10;
         }
@@ -334,7 +412,7 @@ class Urs {
             v[1] = enemy_neighbor((unsigned short)((b + 1) % (map).width), a);
 
             if(s.strength)
-                val[1] = (double)s.production / (double)s.strength + 1;
+                val[1] = (double)s.production / (double)s.strength;
             else
                 val[1] = 10;
         }
@@ -352,7 +430,7 @@ class Urs {
             v[3] = enemy_neighbor(b - 1, a);
 
             if(s.strength)
-                val[3] = (double)s.production / (double)s.strength + 1;
+                val[3] = (double)s.production / (double)s.strength;
             else
                 val[3] = 10;
         }
@@ -397,9 +475,13 @@ class Urs {
             }   
         }
         if(nr2) {
+
             moves.insert({ { b, a }, (unsigned char)(ind + 1) });
-            if(!(inner_tile(b, a)))
+            hlt::Location l = map.getLocation({ b, a }, (unsigned char)(ind + 1));
+
+            if(!(inner_tile(l.x, l.y)))
                 shout(map.getLocation({ b, a }, (unsigned char)(ind + 1)));
+
             return;
         }
         
@@ -416,6 +498,8 @@ int main(void) {
     Urs urs;
     hlt::Site s;
 
+    int new_size;
+
     getInit(urs.myID, urs.map);
 
     sendInit("Mda");
@@ -427,13 +511,16 @@ int main(void) {
         urs.moves.clear();
         getFrame(urs.map);
 
-        urs.empire_size = 1;
+        new_size = 0;
 
         for(unsigned short a = 0; a < (urs.map).height; a++) {
             for(unsigned short b = 0; b < (urs.map).width; b++) {
 
+
                 if((s = (urs.map).getSite({ b, a })).owner == urs.myID) {
                     
+                    new_size++;
+
                     if(s.strength == 0) {
                         urs.moves.insert({ { b, a }, STILL });
 
@@ -441,11 +528,10 @@ int main(void) {
 
                         urs.do_move(b, a);
                     }
-
-                    urs.empire_size++;
                 }
             }
         }
+        urs.empire_size = new_size;
 
         urs.update_ray();
         urs.alarm_normalize();
