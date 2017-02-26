@@ -486,8 +486,6 @@ int main(void) {
     Urs urs;
     hlt::Site s;
 
-    urs.empire_size = 1;
-
     int new_size;
 
     getInit(urs.myID, urs.map);
