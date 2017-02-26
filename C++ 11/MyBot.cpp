@@ -108,6 +108,7 @@ class Urs {
             }
 
             if(bun && !(inner_tile(alarms[i].x, alarms[i].y)))
+
                 new_alarms.push_back(alarms[i]);
         }
 
@@ -181,7 +182,9 @@ class Urs {
             for(int i = 0; i < alarms.size(); i++) {
 
                 alarm = alarms[i];
+
                 if(map.getDistance(l, alarm) < d) {
+
                     d = map.getDistance(l, alarm);
                     k = 0;
                     ind = i;
@@ -205,6 +208,15 @@ class Urs {
             to_move.pop();
         }
     }
+
+    float update_ray() {
+
+    	ray = ceil(sqrt(empire_size) / 2);
+
+    	if(ray < 3)
+    		ray = 3;
+    }
+
 
     unsigned char out_direction(unsigned short b, unsigned short a) {
 
@@ -516,7 +528,6 @@ int main(void) {
 
                         urs.do_move(b, a);
                     }
-
                 }
             }
         }
@@ -525,8 +536,6 @@ int main(void) {
         urs.update_ray();
         urs.alarm_normalize();
         urs.assign();
-        
-
         sendFrame(urs.moves);
     }
 

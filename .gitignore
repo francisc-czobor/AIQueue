@@ -13,3 +13,7 @@
 *.hlt
 
 *.log
+
+Java 8/\.classpath
+
+Java 8/\.project
