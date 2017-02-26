@@ -48,57 +48,136 @@ unsigned char out_direction(unsigned short b, unsigned short a, hlt::GameMap m) 
     return 0;
 }
 
+int enemy_neighbor(unsigned char b, unsigned char a, unsigned char owner, hlt::GameMap m) {
+    int i = 0;
+    short r;
+
+    if((m.getSite({ b, (unsigned short)((a + 1) % m.height) })).owner != owner &&
+        (m.getSite({ b, (unsigned short)((a + 1) % m.height) })).owner)
+        i++;
+
+    r = a - 1;
+    if(!a)
+        r += m.height;  
+
+    if((m.getSite({ b, (unsigned short)r })).owner != owner &&
+        (m.getSite({ b, (unsigned short)r })).owner)
+        i++;
+
+    if((m.getSite({ (unsigned short)((b + 1) % m.width), a })).owner != owner &&
+        (m.getSite({ (unsigned short)((b + 1) % m.width), a })).owner)
+        i++;
+
+    r = b - 1;
+    if(!b)
+        r += m.width;
+
+    if((m.getSite({ (unsigned short)r, a })).owner != owner &&
+        (m.getSite({ (unsigned short)r, a })).owner != owner)
+        i++;
+
+    return i;
+}
+
 unsigned char get_direction(unsigned short b, unsigned short a, hlt::GameMap m) {
 
-    int i = 0;
+    int i = 0, v[] = {0, 0, 0, 0};
+    double val[] = {0, 0, 0, 0};
+    short r;
     unsigned char owner = (m.getSite({ b, a })).owner, strength = (m.getSite({ b, a })).strength;
     hlt::Site s = m.getSite({ b, (unsigned short)((a + 1) % m.height)});
 
+
     if(s.owner == owner) {
         i++;
     } else if(s.strength < strength) {
-        return 3;
+        v[2] = enemy_neighbor( b, (unsigned short)((a + 1) % m.height), owner, m);
+        if(s.strength)
+            val[2] = (double)s.production / (double)s.strength + 1;
+        else
+            val[2] = 10;
     }
 
-    if(a)
-        s = m.getSite({ b, (unsigned short)((a - 1) % m.height)});
-    else 
-        s  = m.getSite({ b, 29 });
+    r = a - 1;
+    if(!a)
+        r += m.height;  
+
+    s = m.getSite({ b, (unsigned short)r });
 
     if(s.owner == owner) {
         i++;
     } else if(s.strength < strength) {
-        return 1;
+        v[0] = enemy_neighbor( b, (unsigned short)r, owner, m);
+        if(s.strength)
+            val[0] = (double)s.production / (double)s.strength + 1;
+        else
+            val[0] = 10;
     }
 
     s = m.getSite({(unsigned short)((b + 1) % m.width), a});
 
-
     if(s.owner == owner) {
         i++;
     } else if(s.strength < strength) {
-        return 2;
+        v[1] = enemy_neighbor((unsigned short)((b + 1) % m.width), a , owner, m);
+        if(s.strength)
+            val[1] = (double)s.production / (double)s.strength + 1;
+        else
+            val[1] = 10;
     }
 
-    if(b)
-        s = m.getSite({(unsigned short)((b - 1) % m.width), a});
-    else 
-        s = m.getSite({29, a});
+    r = b - 1;
+    if(!b)
+        r += m.width;
+
+    s = m.getSite({ (unsigned short)r, a });
 
     if(s.owner == owner) {
         i++;
     } else if(s.strength < strength) {
-        return 4;
+        v[3] = enemy_neighbor((unsigned short)r, a, owner, m);
+        if(s.strength)
+            val[3] = (double)s.production / (double)s.strength + 1;
+        else
+            val[3] = 10;
     }
 
     unsigned char prod = (m.getSite({ b, a })).production;
     
-    if(prod && strength/prod <= 5)
+    if(i == 4) {
+        if(strength <= 5 * prod)
+            return 0;
+        return out_direction(b, a, m);
+    }
+
+    if(strength <= 3 * prod)
         return 0;
 
-    if(i == 4)
-        return out_direction(b, a, m);
+    int ind = 0, nr = 0;
 
+    for(i = 0; i < 4; i++) {
+        if(v[i] > nr) {
+            nr = v[i];
+            ind = i;
+        }
+    }
+
+    if(nr) {
+        return ind+1;
+    }
+
+    double nr2 = 0;
+
+    for(i = 0; i < 4; i++) {
+        if(val[i] > nr2) {
+            nr2 = val[i];
+            ind = i;
+        }   
+    }
+    if(nr2 != 0) {
+        return ind + 1;
+    }
+    
     return 0;
 }
 
@@ -112,11 +191,7 @@ int main() {
     hlt::Site s;
     getInit(myID, presentMap);
 
-
-
-    sendInit("MyC++Bot2");
-
-    
+    sendInit("Pelecinta");
 
     std::set<hlt::Move> moves;
     while(true) {
