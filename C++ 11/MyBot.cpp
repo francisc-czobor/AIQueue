@@ -209,15 +209,6 @@ class Urs {
         }
     }
 
-    float update_ray() {
-
-    	ray = ceil(sqrt(empire_size) / 2);
-
-    	if(ray < 3)
-    		ray = 3;
-    }
-
-
     unsigned char out_direction(unsigned short b, unsigned short a) {
 
         unsigned char d = 3;
